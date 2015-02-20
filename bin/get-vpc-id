@@ -1,0 +1,5 @@
+#!/bin/bash
+
+VPC_CIDR_BLOCK="${1}"
+
+aws ec2 describe-vpcs --filters Name=cidr,Values=${VPC_CIDR_BLOCK} | jq .Vpcs[].VpcId | sed -e 's/"//g'
