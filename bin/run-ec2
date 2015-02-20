@@ -1,0 +1,25 @@
+#!/bin/bash
+
+INSTANCE_NAME="${1}"
+INSTANCE_TYPE="${2}"
+KEY_NAME="${3}"
+SUBNET_CIDR_BLOCK="${4}"
+AMI_NAME="${5}"
+SG_NAMES="${6}"
+JSON="${7}"
+CMDDIR=$(dirname $0)
+
+SG_IDS=$(echo $(${CMDDIR}/security-group-ids ${SG_NAMES}))
+SUBNET_ID=$(${CMDDIR}/get-subnet-id ${SUBNET_CIDR_BLOCK})
+AMI_ID=$(${CMDDIR}/get-ami-id ${AMI_NAME})
+
+INSTANCE_ID=$(aws ec2 run-instances --key-name ${KEY_NAME} --image-id ${AMI_ID} \
+    --instance-type ${INSTANCE_TYPE} \
+    --subnet-id ${SUBNET_ID} \
+    --security-group-ids ${SG_IDS} \
+    --block-device-mappings ${JSON} \
+    --associate-public-ip-address --disable-api-termination \
+    | jq .Instances[].InstanceId | sed -s 's/"//g'
+)
+
+aws ec2 create-tags --resources ${INSTANCE_ID} --tags Key=Name,Value=${INSTANCE_NAME}
