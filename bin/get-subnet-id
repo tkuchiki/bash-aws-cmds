@@ -1,0 +1,4 @@
+#!/bin/bash
+
+SUBNET_CIDR_BLOCK="${1}"
+aws ec2 describe-subnets --filters Name=cidrBlock,Values=${SUBNET_CIDR_BLOCK} | jq .Subnets[].SubnetId | sed -e 's/"//g'
