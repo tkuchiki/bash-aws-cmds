@@ -1,0 +1,18 @@
+#!/bin/bash
+
+ELB_NAME="${1}"
+STATE="${2:-InService}"
+[ ${STATE} != "InService" ] && STATE="OutOfService"
+
+INSTANCE_IDS=$(aws elb describe-load-balancers --load-balancer-names ${ELB_NAME} | \
+jq '.LoadBalancerDescriptions[].Instances[].InstanceId' | sed -e 's/"//g')
+
+INSERVICE_IDS=$(aws elb describe-instance-health --load-balancer-name ${ELB_NAME} --instances ${INSTANCE_IDS} | \
+jq ".InstanceStates[] | select(.State == \"${STATE}\").InstanceId" | sed -e 's/"//g')
+
+#INSERVICE_IDS=$(aws elb describe-instance-health --load-balancer-name ${ELB_NAME} --instances ${INSTANCE_IDS} | \
+#jq '.InstanceStates[] | select(.State == "InService").InstanceId' | sed -e 's/"//g')
+echo "Status: ${STATE}"
+echo
+aws ec2 describe-tags --filters Name=resource-id,Values=$(echo ${INSERVICE_IDS} | tr " " ",") | \
+    jq '.Tags[] | select(.Key == "Name").Value' | sed -e 's/"//g' | sort
