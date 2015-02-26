@@ -1,0 +1,23 @@
+#!/bin/bash
+
+DBHOST="${1}"
+LOGTYPE="${2:-slowlog}"
+LOGNUM="${3:-latest}"
+
+ERRORLOG="error/mysql-error.log"
+ERRORRUNNINGLOG="error/mysql-error-running.log"
+SLOWLOG="slowquery/mysql-slowquery.log"
+LOG=""
+
+if [ ${LOGTYPE} = "slowlog" ]; then
+    LOG=${SLOWLOG}
+elif [ ${LOGTYPE} = "error" ]; then
+    LOG="${ERRORLOG}"
+elif [ ${LOGTYPE} = "errorrunning" ]; then
+    LOG="${ERRORRUNNINGLOG}"
+fi
+
+[ "${LOGNUM}" != "latest" ] && LOG="${LOG}.${LOGNUM}"
+
+aws rds download-db-log-file-portion --db-instance-identifier ${DBHOST} \
+    --log-file-name ${LOG} | jq -r '.LogFileData | add'
